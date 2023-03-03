@@ -3,6 +3,7 @@
 # Features
  - Security: Save encrypted API-Key in .env file
 
+## Description
 
 This is a python script that will parse IP addresses from files or manually interact with AbuseIPDB API. It will return the information about the IP into standard out in various outputs.
 
