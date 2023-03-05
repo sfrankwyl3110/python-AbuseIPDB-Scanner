@@ -130,15 +130,3 @@ dmypy.json
 keys/
 .idea/
 node_/
-wsgi_app/uploads/
-wsgi_app/app/data/
-wsgi_app/source/
-wsgi_app/app/sessions/
-wsgi_app/results.txt
-wsgi_app/app/proxy_data/
-images/
-proxy_scrape.py
-proxy_test.py
-proxy_config.py
-dalle.py
-wsgi_app/app/uploads/*.pdf
