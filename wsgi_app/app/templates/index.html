@@ -1,20 +1,255 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Test Title</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}">
-</head>
-<body>
+{% extends 'base.html' %}
+{% from 'bootstrap5/form.html' import render_form, render_field, render_form_row %}
+{% block content %}
 
-<div class="container-fluid">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+{% assets "main" %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+{% endassets %}
+
+<div class="container-fluid" style="font-size: .8rem;">
+  {% if is_authenticated %}
+    <div class="row">
+      <div data-id="label" class="col-4">
+        <label for="source_folder">source</label>
+      </div>
+      <div class="col-8">
+        <input id="source_folder" class="form-control" type="text" value="{{ pdf_manager.source_folder }}" readonly>
+      </div>
+    </div>
+    <div class="row">
+      <div data-id="label" class="col-4">
+        <label for="target_folder">target</label>
+      </div>
+      <div class="col-8">
+        <input id="target_folder" class="form-control" type="text" value="{{ pdf_manager.target_folder }}" readonly>
+      </div>
+    </div>
+    <div class="row">
+      <div data-id="label" class="col-4">
+        <label for="session_filename">session_filename</label>
+      </div>
+      <div class="col-8">
+        <input id="session_filename" class="form-control" type="text" value="{{ pdf_manager.session_filename }}" readonly>
+      </div>
+    </div>
+
+
     <div class="row">
         <div class="col-12">
-            <h1>Welcome</h1>
+            <input type="button" value="RUN" id="btn_run">
+			<input type="button" value="UPLOAD PDF" id="btn_upload_file" onclick="window.open('/upload_file')">
         </div>
     </div>
-</div>
+    {% endif %}
+    {% if is_authenticated %}
+    <div class="row">
+        <div class="col-12">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-4">
+                    </div>
+                    <div class="col-8">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-4">
+                        username
+                    </div>
+                    <div class="col-8">
+                        {{ user.username }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-4">
+                        email
+                    </div>
+                    <div class="col-8">
+                        {{ user.email }}
+                    </div>
+                </div>
+                <!--
+                <div class="row">
+                    <div class="col-12">
+                        <input type="button" id="toggle_2fa_enabled" value="Toggle 2FA">
+                        <input type="radio" class="btn-check" name="options-outlined" id="enabled-outlined" autocomplete="off">
+                        <label class="btn btn-outline-success" for="enabled-outlined">Checked success radio</label>
 
-<script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-</body>
-</html>
+                        <input type="radio" class="btn-check" name="options-outlined" id="not-enabled-outlined" autocomplete="off">
+                        <label class="btn btn-outline-danger" for="not-enabled-outlined">Danger radio</label>
+                    </div>
+                </div>
+                -->
+                <!--
+                <div class="row">
+                    <div class="col-4">
+                        other emails
+                    </div>
+                    <div class="col-8">
+                        {% if user.secondary_emails %}
+                        {% set emails = user.secondary_emails.split(',') %}
+                        <ul>
+                        {% for email in emails %}
+                          <li>{{ email }}</li>
+                        {% endfor %}
+                        {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                -->
+            </div>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-4">
+                        Async mode
+                    </div>
+                    <div class="col-8">
+                        {{ async_mode }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-4">
+                        transport
+                    </div>
+                    <div class="col-8">
+                        <span id="transport"></span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-4">
+                        latency
+                    </div>
+                    <div class="col-8">
+                        <span id="ping-pong"></span>ms
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            {% if not is_authenticated %}
+            <input type="button" class="primary-button" id="show_login_btn" value="Login">
+            <script>
+                $("#show_login_btn").on('click', function(ev) {
+                    ev.preventDefault();
+                    $("#login_container").toggleClass('hide_login show_login');
+
+                })
+            </script>
+            {% endif %}
+        </div>
+
+    </div>
+    <div class="row hide_login" id="login_container">
+
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                          <form method="post" action="{{ form.action }}">
+    {{ form.csrf_token }}
+    {{ render_form_row([form.username, form.password], col_map={'username': 'col-md-12', 'password': 'col-md-12'}) }}
+
+
+    {{ render_form_row([form.remember]) }}
+    {{ render_form_row([form.submit]) }}
+    </form>
+                        </div>
+                </div>
+                <a href="{{ url_for('auth.google', ref='login') }}">Google Login</a>
+            </div>
+
+    </div>
+    {% if is_authenticated %}
+        <input type="button" class="primary-button" id="logout_btn" value="Logout">
+        <script>
+            $("#logout_btn").on('click', function(ev) {
+                ev.preventDefault();
+                window.location.href = "/logout";
+            })
+        </script>
+        {% endif %}
+    <script>
+const currentUrl = window.location.href;
+// Create a new instance of URLSearchParams with the query string of the current URL
+const searchParams = new URLSearchParams(currentUrl.split('?')[1]);
+if (searchParams.get('login') == "True") {
+$("#login_container").toggleClass('hide_login show_login');
+}
+    </script>
+    {% if is_authenticated %}
+    <div id="uploaded_files" style="border: 1px dotted #CCC;">
+        <h3>Uploaded Files (Click on entries to delete file)</h3>
+        <div id="upload_folder"></div>
+        <ul id="ufiles"></ul>
+    </div>
+    <script>
+        $(document).ready(function () {
+
+            $.ajax({
+                url: "{{ url_for('general.uploaded_files_index') }}",
+                success: function (data) {
+                    console.log(data)
+                    $("#upload_folder").html(data["folder"])
+                    $.each(data["contents"], function (index, current_file) {
+                        let li_element = document.createElement('li')
+                        $(li_element).html(current_file)
+                        $(li_element).on('click', function (ev) {
+                            ev.preventDefault();
+                            $.ajax({
+                                url: "{{ url_for('general.delete_uploaded_file') }}",
+                                type: "POST",
+                                data: {
+                                    file: current_file
+                                },
+                                success: function (data) {
+                                    console.log(data)
+                                    if(!data["success"] && data["exists_"]) {
+                                        console.log("EXISTING FILE, confirm for removal")
+                                        if (window.confirm("Do you really want to delete "+current_file+"?")) {
+                                            $.ajax({
+                                                url: "{{ url_for('general.delete_uploaded_file') }}",
+                                                type: "POST",
+                                                data: {
+                                                    file: current_file,
+                                                    confirmed: true
+                                                },
+                                                success: function (data) {
+                                                    if(data["success"]) {
+                                                        $("#ufiles").remove($(li_element))
+                                                        //window.location.reload()
+                                                    }
+                                                    
+                                                }
+                                            })
+                                        }
+                                    }
+                                }
+                            })
+                        })
+                        $("#ufiles").append($(li_element))
+
+
+                    })
+                }
+            })
+
+        })
+    </script>
+    <div class="row">
+        <div class="col-12" id="log" style="max-height: 50vh; min-height: 50vh; border: 1px solid #333; overflow: hidden; background: #111; color: #ECECEC; text-shadow: 1px 1px #fff;"></div>
+    </div>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+

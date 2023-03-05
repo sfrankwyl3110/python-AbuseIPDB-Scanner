@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from 'bootstrap5/form.html' import render_form, render_field, render_form_row %}
+
+{% block content %}
+<script src="https://code.jquery.com/jquery-3.6.3.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+    <h1>Registration</h1>
+    <p>Before you submit this form, please ensure you have <a href="https://fedorahosted.org/freeotp/">FreeOTP</a> installed on your smartphone, as you will need it to complete your registration. Download from <a href="https://itunes.apple.com/us/app/freeotp/id872559395">iTunes</a> | <a href="https://play.google.com/store/apps/details?id=org.fedorahosted.freeotp">Google Play</a></p>
+    <form method="POST" action="{{ form.action }}">
+      {{ form.csrf_token }}
+      <div class="form-group">
+
+        {{ form.username.label }} {{ form.username }}
+      </div>
+      <div class="form-group">
+          {% if disabled %}
+        {{ form.email.label }} {{ form.email(readonly=readonly) }}
+
+
+          {% else %}
+          {{ form.email.label }} {{ form.email }}
+          {% endif %}
+          <input type="button" id="google_register_btn" value="Get Value from Google.com" disabled="disabled">
+          <script>
+          if(window.localStorage.getItem('new_username') != $("input[name='username']").val()) {
+            $("input[name='username']").val(window.localStorage.getItem('new_username'))
+          }
+              $("#google_register_btn").on('click', function(ev) {
+                ev.preventDefault()
+                window.localStorage.setItem('new_username', $("input[name='username']").val())
+                window.location.href = "/pdf/google"
+              })
+          </script>
+      </div>
+
+        {% if not no_password %}
+        <div class="form-group">
+
+        {{ form.password.label }} {{ form.password }}
+      </div>
+
+        <div class="form-group">
+
+        {{ form.password_again.label }} {{ form.password_again }}
+      </div>
+        {% endif %}
+
+        <div class="form-group">
+        {{ form.submit }}
+      </div>
+    </form>
+
+    <br>
+    <div class="alert alert-danger" role="alert">Note: The next page will show sensitive information. Make sure nobody can see your screen before pressing the Register button.</div>
+{% endblock %}

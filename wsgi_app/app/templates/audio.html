@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+{% from 'bootstrap5/form.html' import render_form, render_field, render_form_row %}
+{% block content %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.js" integrity="sha512-xbQU0+iHqhVt7VIXi6vBJKPh3IQBF5B84sSHdjKiSccyX/1ZI7Vnkt2/8y8uruj63/DVmCxfUNohPNruthTEQA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<p>
+    <button id="startRecording">Start recording</button>
+    <button id="stopRecording" disabled>Stop recording</button>
+</p>
+<div id="volume"></div>
+<canvas id="myCanvas" style="border: 1px solid #333;"></canvas>
+<script>
+    let analyser;
+    let source;
+    let audioContext;
+    let audioChunks;
+    let constraints;
+    let mediaRecorder;
+    let interv;
+    const volumeDiv = document.getElementById('volume');
+    const startRecording = $('#startRecording')[0];
+    const stopRecording = $('#stopRecording')[0];
+    const socket = io();
+    let connected = false
+
+    var myCanvas = document.getElementById("myCanvas");
+
+
+    class BarChart {
+
+        constructor(options) {
+
+            this.options = options;
+
+            this.canvas = options.canvas;
+
+            this.ctx = this.canvas.getContext("2d");
+
+            this.colors = options.colors;
+
+            this.titleOptions = options.titleOptions;
+
+            this.maxValue = Math.max(...Object.values(this.options.data));
+
+        }
+
+
+
+        drawGridLines() {
+
+            var canvasActualHeight = this.canvas.height - this.options.padding * 2;
+
+            var canvasActualWidth = this.canvas.width - this.options.padding * 2;
+
+            var gridValue = 0;
+
+            while (gridValue <= this.maxValue) {
+
+                var gridY =
+
+                    canvasActualHeight * (1 - gridValue / this.maxValue) +
+
+                    this.options.padding;
+
+                drawLine(
+
+                    this.ctx,
+
+                    0,
+
+                    gridY,
+
+                    this.canvas.width,
+
+                    gridY,
+
+                    this.options.gridColor
+
+                );
+
+                drawLine(
+
+                    this.ctx,
+
+                    15,
+
+                    this.options.padding/2,
+
+                    15,
+
+                    gridY + this.options.padding/2,
+
+                    this.options.gridColor
+
+                );
+
+                // Writing grid markers
+
+                this.ctx.save();
+
+                this.ctx.fillStyle = this.options.gridColor;
+
+                this.ctx.textBaseline = "bottom";
+
+                this.ctx.font = "bold .8rem Arial";
+
+                this.ctx.fillText(gridValue, 0, gridY - 2);
+
+                this.ctx.restore();
+
+                gridValue += this.options.gridScale;
+
+            }
+
+        }
+
+        drawBars() {
+
+            var canvasActualHeight = this.canvas.height - this.options.padding * 2;
+
+            var canvasActualWidth = this.canvas.width - this.options.padding * 2;
+
+            var barIndex = 0;
+
+            var numberOfBars = Object.keys(this.options.data).length;
+
+            var barSize = canvasActualWidth / numberOfBars;
+
+
+
+            var values = Object.values(this.options.data);
+
+            for (let val of values) {
+
+                var barHeight = Math.round((canvasActualHeight * val) / this.maxValue);
+
+                console.log(barHeight);
+
+
+
+                drawBar(
+
+                    this.ctx,
+
+                    this.options.padding + barIndex * barSize,
+
+                    this.canvas.height - barHeight - this.options.padding,
+
+                    barSize,
+
+                    barHeight,
+
+                    this.colors[barIndex % this.colors.length]
+
+                );
+
+                barIndex++;
+
+            }
+
+        }
+
+
+
+        draw() {
+
+            this.drawGridLines();
+
+            this.drawBars();
+
+        }
+
+    }
+
+    myCanvas.width = 60;
+
+    myCanvas.height = 500;
+
+    var ctx = myCanvas.getContext("2d");
+
+
+    function drawLine(ctx, startX, startY, endX, endY,color){
+
+        ctx.save();
+
+        ctx.strokeStyle = color;
+
+        ctx.beginPath();
+
+        ctx.moveTo(startX,startY);
+
+        ctx.lineTo(endX,endY);
+
+        ctx.stroke();
+
+        ctx.restore();
+
+    }
+
+    function drawBar(ctx, upperLeftCornerX, upperLeftCornerY, width, height,color){
+
+        ctx.save();
+
+        ctx.fillStyle=color;
+
+        ctx.fillRect(upperLeftCornerX,upperLeftCornerY,width,height);
+
+        ctx.restore();
+
+    }
+    function setVal(val) {
+        var myBarchart = new BarChart({
+
+            canvas: myCanvas,
+
+            padding: 0,
+
+            gridScale: 1,
+            backgroundColor: '#111',
+
+            gridColor: "black",
+
+            data: {
+
+                "Volume": parseFloat(val),
+
+            },
+
+            colors: ["#67b6c7"],
+
+        });
+
+        myBarchart.draw();
+    }
+
+    setVal(1)
+    setVal(2)
+
+    socket.on('connect', function () {
+        console.log("connected")
+        connected = true
+    })
+
+    navigator.mediaDevices.getUserMedia({audio: true})
+        .then(stream => {
+            handlerFunction(stream);
+
+            audioContext = new AudioContext();
+            source = audioContext.createMediaStreamSource(stream);
+            analyser = audioContext.createAnalyser();
+
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+
+            audioChunks = [];
+        });
+
+
+    function handlerFunction(stream) {
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => {
+            audioChunks.push(e.data);
+            const chunk = new Blob(audioChunks, { type: 'audio/webm' });
+            sendChunk(chunk);
+        };
+    }
+
+    function sendChunk(chunk) {
+        const sizeInBytes = new Blob([chunk]).size;
+        console.log(sizeInBytes)
+        if (sizeInBytes >= 24000) {
+            if (connected) {
+                socket.emit('audio-chunk', chunk);
+            }
+
+        }
+    }
+
+    startRecording.onclick = e => {
+        console.log('Recording has started..');
+        startRecording.disabled = true;
+        stopRecording.disabled = false;
+        audioChunks = [];
+        mediaRecorder.start();
+
+        // Periodically get the volume level of the input stream and update the <div> element
+       interv = setInterval(() => {
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(dataArray);
+            //console.log(dataArray);
+            const volume = dataArray.reduce((acc, val) => acc + val) / dataArray.length;
+            //
+
+           audioChunks.push(dataArray)
+           const chunk = new Blob(audioChunks, { type: 'audio/webm' });
+           sendChunk(chunk);
+            // Print the volume level in a <div> element
+
+            volumeDiv.innerHTML = `Volume: ${volume}`;
+           socket.emit('audio-Volume', volume);
+        }, 10);
+    };
+
+    stopRecording.onclick = e => {
+        console.log("Recording has stopped.");
+        startRecording.disabled = false;
+        stopRecording.disabled = true;
+        mediaRecorder.stop();
+        window.clearInterval(interv)
+    };
+</script>
+
+{% endblock %}

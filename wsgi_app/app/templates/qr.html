@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col-md-4">
+        <h1>Scan the QR Code Below</h1>
+        <p>
+            <img id="qr-code" src="{{ url_for('qr_code') }}" alt="QR Code" />
+        </p>
+        <p>
+            Once scanned, you can <a class="btn" href="{{ url_for('login') }}">Login</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
