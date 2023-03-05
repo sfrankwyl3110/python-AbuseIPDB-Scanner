@@ -141,3 +141,4 @@ proxy_scrape.py
 proxy_test.py
 proxy_config.py
 dalle.py
+wsgi_app/app/uploads/*.pdf
