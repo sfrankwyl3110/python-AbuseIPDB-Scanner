@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% from 'bootstrap5/form.html' import render_form, render_field, render_form_row %}
+{% block content %}
+<script src="https://code.jquery.com/jquery-3.6.3.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+<style>
+    .token_input {
+        font-size: 3.5rem; width: 60vw;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+       /* Hide the label using CSS */
+  label[for="token"] {
+    display: none;
+  }
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 text-center"><h2 style="font-size: 2.5rem;">Please Enter<br>2FA-Token</h2></div>
+    </div>
+    <div class="row">
+        <div class="col-12 text-center">
+            <form method="post" action="{{ url_for('try_2fa') }}">
+    {{ form.csrf_token }}
+        {{ render_field(form.token, placeholder="000 000", value_="", class_="token_input", hide_label=True) }}
+                {{ render_field(form.username, readonly='readonly', disabled='disabled') }}
+        {{ render_form_row([form.submit]) }}
+            </form>
+            <script>
+            $(document).ready(function() {
+                $("input[name='token']").val('')
+            })
+  var inputField = $('input[name="token"]');
+
+  // attach the change event to the input field
+  inputField.on('change input', function() {
+    // get the current input value
+    var inputValue = $(this).val();
+
+
+        // check if the input value is not numeric
+    if (inputValue.length == 6) {
+
+    // make an AJAX request
+    $.ajax({
+      url: '/try_2fa',
+      method: 'POST',
+      data: {
+        token: inputValue,
+        username: $("input[name='username']").val()
+      },
+      success: function(response) {
+        // handle the response from the server
+        console.log(response)
+        if(response["success"] == true) {
+            window.location.href = "{{ url_for('index') }}"
+        }
+      },
+      error: function(xhr, status, error) {
+        // handle the error
+      }
+    });
+  } else if (!/^\d+$/.test(inputValue)) {
+      Toastify({
+        text: "Please enter only numeric values",
+        duration: 3000,
+        gravity: "top",
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)",
+        },
+        // set the fade-out duration to 500 milliseconds
+        fadeOut: 1200
+      }).showToast();
+      // clear the input field
+      $(this).val("");
+      return;
+    }
+
+    // remove any non-numeric characters from the input value
+    var numericValue = inputValue.replace(/\D/g, '');
+
+    // keep only the first 6 characters if the input length is longer than 6
+    if (numericValue.length > 6) {
+      numericValue = numericValue.substr(0, 6);
+    }
+
+    // set the input value to the numeric value
+    $(this).val(numericValue);
+  });
+</script>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 text-center">
+            <input type="button" value="Abort">
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

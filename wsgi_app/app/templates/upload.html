@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% from 'bootstrap5/form.html' import render_form, render_field, render_form_row %}
+
+{% block content %}
+    <form id="upload-form">
+          {{ form.hidden_tag() }}
+        <div class="form-group">
+        {{ render_field(form.file) }}
+        </div>
+        <div class="form-group">
+        {{ render_field(form.submit) }}
+        </div>
+</form>
+<div class="progress">
+  <div class="progress-bar" role="progressbar"></div>
+</div>
+<div class="error_message_container container-fluid" id="error_message_container"></div>
+<script src="https://code.jquery.com/jquery-3.6.3.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+<script>
+    let $ = jQuery;
+	function basename(path) {
+		
+		if  (path.split('/').reverse()[0] == path) {
+			return path.split('\\').reverse()[0]
+		} else {
+			return path.split('/').reverse()[0]
+		}
+	   return path.split('/').reverse()[0];
+	}
+
+    function create_new_div(message) {
+        let new_Div = document.createElement('div')
+        $(new_Div).addClass('row')
+        $(new_Div).attr('data-ident', 'error_row')
+        let new_Div_ = document.createElement('div')
+        $(new_Div_).addClass("col-12")
+        $(new_Div).append(new_Div_)
+        $(new_Div_).html(new Date().toLocaleString()+": "+basename($("#file").val())+" "+message)
+        return new_Div_
+    }
+
+$(function() {
+  var form = $('#upload-form');
+  var progressBar = $('.progress-bar');
+  let error_message_container = $("#error_message_container")
+  let error_row = "div[data-ident='error_row']"
+  $(form).on('submit', function(e) {
+
+
+    e.preventDefault();
+      progressBar.width('0%');
+      $(progressBar).css('backgroundColor', 'rgba(119,182,255,0.71)')
+      let formData;
+    window.setTimeout(function () {
+
+        formData = new FormData($(form)[0]);
+        $.ajax({
+            xhr: function() {
+                var xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener('load', function(e) {
+                    let percent = 100;
+                    // Upload has completed successfully
+                    let new_Div = create_new_div("Upload success")
+                    if ($(error_message_container).find($(error_row)).length >= 5) {
+                        $(error_message_container).find($(error_row))[0].remove()
+                    }
+                    $(error_message_container).append( $(new_Div) );
+                    progressBar.width(percent + '%');
+                }, false);
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        var percent = Math.round((e.loaded / e.total) * 100);
+                        progressBar.width(percent + '%');
+                    }
+                }, false);
+                return xhr;
+            },
+            url: "/upload",
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                if($.inArray("status",Object.keys(data)) != "-1") {
+                    if (data["status"] == "error") {
+                        let new_Div = create_new_div(data["message"])
+                        if ($(error_message_container).find($(error_row)).length >= 5) {
+                            $(error_message_container).find($(error_row))[0].remove()
+                        }
+                        $(error_message_container).append( $(new_Div) );
+                        window.setTimeout(function () {
+                            $(progressBar).css('backgroundColor', 'rgba(255,119,144,0.71)')
+                        }, 650)
+                    } else {
+                        console.log("no error")
+                        window.setTimeout(function () {
+                            $(progressBar).css('backgroundColor', 'rgba(196,255,119,0.71)')
+                        }, 650)
+
+                    }
+
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('Upload error: ' + error);
+            }
+        });
+
+    }, 900)
+
+
+
+
+
+  });
+});
+</script>
+{% endblock %}

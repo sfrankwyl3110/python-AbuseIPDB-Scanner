@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% from 'bootstrap5/form.html' import render_form, render_field, render_form_row %}
+{% block content %}
+<style>
+    #map {
+
+        min-width: 70vw;
+        min-height: 46vw;
+        background:#1f3246;
+
+    }
+</style>
+<div id="map"></div><script type="text/javascript" src="{{ url_for('static', filename='maps.js') }}"></script>
+<script>
+    let map = null;
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}"></script><script>
+    map = initMap_default('{{ lat }}', '{{ lng }}', map);
+    map.setZoom(10)
+</script>
+{% endblock %}
+

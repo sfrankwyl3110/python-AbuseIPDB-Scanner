@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% from 'bootstrap5/form.html' import render_form, render_field, render_form_row %}
+{% block content %}
+<style>
+    #map {
+
+        min-width: 70vw;
+        min-height: 46vw;
+        background:#1f3246;
+
+    }
+</style>
+<iframe id="map"
+        style="border:0"
+        loading="lazy"
+        allowfullscreen
+        referrerpolicy="no-referrer-when-downgrade"
+        src="https://www.google.com/maps/embed/v1/place?key={{ api_key }}
+    &q=Hohe+Mauer+21/1,Esenhausen+Deutschland">
+</iframe>
+{% endblock %}
+
