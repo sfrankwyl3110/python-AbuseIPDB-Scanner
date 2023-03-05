@@ -137,3 +137,4 @@ proxy_app/
 */*/proxy_data/*.csv
 */*/proxy_data/*.conf
 */*/uploads/*.pdf
+wsgi_app/app/static/.webassets-cache/
