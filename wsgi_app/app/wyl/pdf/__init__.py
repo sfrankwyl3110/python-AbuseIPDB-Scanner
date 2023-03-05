@@ -1,11 +1,15 @@
 import base64
+import csv
 import io
 import json
 import logging
 import os
 import platform
+import re
 import shutil
+import subprocess
 import sys
+import time
 import uuid
 import zlib
 from datetime import datetime
@@ -18,12 +22,114 @@ from wsgi_app.app.config import WindowsConfig, ProductionConfig
 from wsgi_app.app.wyl.utils import clean_dict
 
 
-
 is_win = platform.platform().lower().startswith("win")
 if is_win:
     current_config = WindowsConfig
 else:
     current_config = ProductionConfig
+
+data_dir = os.path.join(current_config.PROJECT_LOCATION, "app", "data")
+
+
+def run_extraction(session_uuid):
+    filemode = "a"
+    if not os.path.isfile("results.txt"):
+        filemode = "w"
+
+    with open("results.txt", filemode) as results_f:
+        for item_i in range(0, 50):
+            txt_ = (str(item_i)+" ")
+            vals = extract_values(session_uuid)
+            txt_ += str(vals)
+            logging.debug("run_extraction: {}".format(txt_))
+            results_f.write(txt_)
+        results_f.close()
+
+
+def write_csv(extracted_value, session_uuid):
+    global data_dir
+    timestamp = time.time()
+
+    os.makedirs(data_dir, exist_ok=True)
+    csv_file = os.path.join(data_dir, 'results.csv')
+    with open(csv_file, 'a', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([timestamp, str(session_uuid), extracted_value])
+
+
+def extract_values(session_uuid):
+    global data_dir
+    fieldnames = ['timestamp', 'session_uuid', 'extracted_value']
+    re_pattern = r"#\d+\,\d+#"
+
+    pytesseract.pytesseract.tesseract_cmd = os.environ.get('TESSERACT_CMD')
+    pytesseract.pytesseract.tessdata_dir_config = os.environ.get('TESSERACT_TESSDATA_CONFIG')
+
+    matches = []
+
+    # Iterate through the data directory and extract numeric values from PDF files
+    for file_ in os.listdir(data_dir):
+        if file_.endswith(".pdf"):
+            pdf_file = os.path.join(data_dir, file_)
+            png_file = os.path.join(data_dir, os.path.splitext(file_)[0] + ".png")
+            gs_path = r"C:\\Program Files\\gs\\gs10.00.0\\bin\\gswin64.exe"
+
+            # Convert PDF to PNG using Ghostscript
+            gs_args = [
+                gs_path, "-dNOSAFER", "-dQUIET", "-dBATCH", "-dNOPAUSE", "-sDEVICE=png16m",
+                "-r300", "-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
+                "-sOutputFile={}".format(png_file), pdf_file
+            ]
+            gs_process = subprocess.Popen(gs_args)
+            gs_process.communicate()
+
+            # Read text from PNG using Tesseract
+            image = PILImage.open(png_file)
+            text = pytesseract.image_to_string(image)
+
+            # Extract numeric characters and commas
+            numeric_matches = re.findall(re_pattern, text)
+            if numeric_matches:
+                extracted_value = numeric_matches[0]
+            else:
+                extracted_value = ""
+
+            # Generate timestamp and session UUID
+            timestamp = time.time()
+
+            csv_file = os.path.join(data_dir, "results.csv")
+            filemode = "a" if os.path.isfile(csv_file) else "w"
+
+            # Save results to CSV file
+
+            with open(csv_file, "a", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+
+                if filemode == "w":
+                    writer.writeheader()
+                else:
+                    with open(csv_file) as csv_file_tmp:
+                        content_tmp = csv_file_tmp.read()
+                        if len(content_tmp.strip()) == 0:
+                            f.close()
+                            csv_file_tmp.close()
+                            print(csv_file)
+                            os.remove(csv_file)
+
+                writer.writerow({
+                    "timestamp": timestamp,
+                    "session_uuid": session_uuid,
+                    "extracted_value": extracted_value
+                })
+
+            matches.append(extracted_value)
+
+            image = PILImage.open(png_file)
+
+            text = pytesseract.image_to_string(image)
+            numeric_matches = re.findall(re_pattern, text)
+            return numeric_matches
+    return matches
 
 
 class PDFManager:
@@ -40,17 +146,16 @@ class PDFManager:
         self.current_config = current_config
         self.socketio = current_socketio
         self.source_folder = os.path.join(self.current_config.PROJECT_LOCATION, self.current_config.source_foldername)
-        print(self.source_folder)
-        print()
         self.target_folder = os.path.join(self.current_config.PROJECT_LOCATION, self.current_config.target_foldername)
-
         self.session_filename = "session-" + \
                                 str(uuid.uuid4()) + \
                                 "-" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + \
                                 ".b64"
 
         pytesseract.pytesseract.tesseract_cmd = self.current_config.TESSERACT_CMD
-        print("TESS: "+self.current_config.TESSERACT_CMD)
+
+        logging.debug("source folder: {}".format(self.source_folder))
+        logging.debug("TESS: "+self.current_config.TESSERACT_CMD)
 
         self.logger = self.get_logger(
             __name__,
