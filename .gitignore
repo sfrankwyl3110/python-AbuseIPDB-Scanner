@@ -130,10 +130,5 @@ dmypy.json
 keys/
 .idea/
 node_/
-dalle_app/images/image-*.png
-dalle_app/images/image-*.json
-dalle_app/dalle.py
-proxy_app/
-*/*/proxy_data/*.csv
 */*/proxy_data/*.conf
 */*/uploads/*.pdf
