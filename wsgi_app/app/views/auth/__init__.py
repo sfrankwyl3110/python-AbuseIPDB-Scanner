@@ -7,8 +7,6 @@ from io import BytesIO
 from flask import Blueprint, url_for, redirect, flash, session, render_template, abort, jsonify, request, \
     current_app
 from flask_login import current_user, login_user, logout_user
-from flask_sqlalchemy import SQLAlchemy
-
 from wsgi_app.app import RegisterForm, User, current_config, oauth, TokenForm, Message, LoginForm
 
 
@@ -124,7 +122,7 @@ def register():
 
 
 @bp_auth.route('/toggle_2fa', methods=["GET", "POST"], strict_slashes=False)
-def togge_2fa():
+def toggle_2fa():
     if request.method == "POST":
         if current_user.is_authenticated:
             current_user.toggle_two_factor_enabled()

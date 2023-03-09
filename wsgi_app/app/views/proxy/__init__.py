@@ -132,7 +132,7 @@ def scrape():
     # URL of the website to scrape
     proxy_source_url = request.form.get("url", "https://www.sslproxies.org/")
     css_selector = request.form.get("css_selector", "section#list table tr")
-    logger.debug("PROXY: css selektor: {}: {}".format(proxy_source_url, css_selector))
+    logger.debug("PROXY: css selector: {}: {}".format(proxy_source_url, css_selector))
     th_rows = BeautifulSoup(
         requests.get(proxy_source_url).content, 'html.parser'
     ).select(css_selector)

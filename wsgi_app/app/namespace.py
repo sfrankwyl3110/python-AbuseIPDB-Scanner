@@ -92,6 +92,7 @@ class MyNamespace(Namespace):
                 thread = self.socketio.start_background_task(self.background_thread)
         emit('my_response', {'data': 'Connected', 'count': 0})
 
+    # noinspection PyUnresolvedReferences
     @staticmethod
     def on_disconnect():
         print('Client disconnected', request.sid)

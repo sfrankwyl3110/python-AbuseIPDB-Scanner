@@ -3,8 +3,6 @@ from flask_login import login_required
 
 bp_audio = Blueprint("audio", __name__)
 
-print("BP: Audio")
-
 
 @login_required
 @bp_audio.route('/audio')

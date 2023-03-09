@@ -68,8 +68,9 @@ def get_files_():
     excluded = ["count", "index"]
     files = {}
     for file in os.listdir(os.path.join(os.path.dirname(bp_root), os.path.basename(uploads_path))):
-        if file.endswith('.pdf'):
-            json_path = os.path.join(os.path.dirname(bp_root), os.path.basename(uploads_path), file.rstrip(".pdf")+".json")
+        if file.endswith(b'.pdf'):
+            json_path = os.path.join(os.path.dirname(bp_root), os.path.basename(uploads_path), file.rstrip(b".pdf") +
+                                     b".json")
 
             if file not in files.keys():
                 stat_ = os.stat(os.path.join(os.path.dirname(bp_root), os.path.basename(uploads_path), file))
