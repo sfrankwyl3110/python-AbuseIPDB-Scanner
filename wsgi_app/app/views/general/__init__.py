@@ -68,9 +68,9 @@ def get_files_():
     excluded = ["count", "index"]
     files = {}
     for file in os.listdir(os.path.join(os.path.dirname(bp_root), os.path.basename(uploads_path))):
-        if file.endswith(b'.pdf'):
-            json_path = os.path.join(os.path.dirname(bp_root), os.path.basename(uploads_path), file.rstrip(b".pdf") +
-                                     b".json")
+        if file.endswith('.pdf'):
+            json_path = os.path.join(os.path.dirname(bp_root), os.path.basename(uploads_path), file.rstrip(".pdf") +
+                                     ".json")
 
             if file not in files.keys():
                 stat_ = os.stat(os.path.join(os.path.dirname(bp_root), os.path.basename(uploads_path), file))
@@ -89,7 +89,7 @@ def get_files_():
 @bp_general.route('/upload', methods=['POST'])
 def upload_file():
     email = current_user.email
-    print("current_uploader: {}".format(email))
+    file_uuid = str(uuid.uuid4())
     if 'file' not in request.files:
         flash('No file part')
         return jsonify({'status': 'error', 'message': 'No file uploaded'})
@@ -98,9 +98,10 @@ def upload_file():
     if file.filename == '':
         return jsonify({'status': 'error', 'message': 'No selected file'})
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
+        filename = secure_filename(file.filename).rstrip(".pdf")+f"-{file_uuid}.pdf"
         file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-        with open(os.path.join(current_app.config['UPLOAD_FOLDER'], filename).rstrip(".pdf")+".json", "w") as json_f:
+        with open(os.path.join(current_app.config['UPLOAD_FOLDER'], filename).rstrip(".pdf")+f"-{file_uuid}.json", "w")\
+                as json_f:
             json_f.write(json.dumps({
                 "uploaded": time.time(),
                 "uploader": email
