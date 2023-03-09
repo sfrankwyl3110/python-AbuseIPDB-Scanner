@@ -39,6 +39,15 @@ class BaseConfig:
     PROJECT_LOCATION = None
 
 
+class TestConfig(BaseConfig):
+    static_url_path = "/pdf/static"
+    UPLOAD_FOLDER = "/usr/test/python-PDFManager/app_1/app/uploads"
+    socketio_cors_allowed = ["https://9teeth.wyl-online.de"]
+
+    def __init__(self):
+        super().__init__()
+
+
 class WindowsConfig(BaseConfig):
     static_url_path = "/static"
     UPLOAD_FOLDER = r"D:\repos\python-AbuseIPDBScanner\wsgi_app\app\uploads"
@@ -52,7 +61,8 @@ class WindowsConfig(BaseConfig):
         "http://localhost:5005",
         "http://localhost:5000",
         "http://192.168.137.69:5055",
-        "http://localhost:5055"
+        "http://localhost:5055",
+        "http://127.0.0.1:5055"
     ]
 
     TESSERACT_CMD = r'C:\Program Files\Tesseract-OCR\tesseract.exe'

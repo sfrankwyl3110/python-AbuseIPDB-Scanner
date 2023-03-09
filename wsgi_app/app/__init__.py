@@ -46,7 +46,7 @@ oauth = OAuth()
 
 socketio = SocketIO(async_mode=async_mode, cors_allowed_origins=WindowsConfig.socketio_cors_allowed)
 
-pdf_manager: PDFManager = PDFManager(current_socketio=socketio)
+pdf_manager: PDFManager = PDFManager()
 
 # log level to DEBUG
 logging.getLogger('werkzeug').setLevel(logging.DEBUG)
@@ -68,12 +68,13 @@ def create_app():
     app.config["MAPS_ENABLED"] = False
 
     assets = Environment(app)
+
     assets.url = app.static_url_path
     assets.register('main',
-                    'style.css', 'layout.css',
+                    'css/src/style.css', 'css/src/layout.css',
                     output='cached.css', filters='cssmin')
-    assets.register('scss_all', Bundle(
-        'main.scss',
+    assets.register('scss_responsive', Bundle(
+        'css/src/responsive.scss',
         filters='pyscss',
         output='responsive.css'
     ))
@@ -95,6 +96,8 @@ def create_app():
         WindowsConfig.DB_PORT,
         WindowsConfig.DB_NAME
     )
+
+    print(app.config['SQLALCHEMY_DATABASE_URI'])
 
     db.init_app(app)
     app.config["db"] = db
@@ -203,7 +206,7 @@ def create_app():
             db.drop_all()
         db.create_all()
     socketio.init_app(app)
-    if pdf_manager is None:
+    if pdf_manager is not None:
         pdf_manager = PDFManager(current_socketio=socketio)
 
     oauth.init_app(app)

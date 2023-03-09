@@ -13,7 +13,5 @@ logging.getLogger('engineio').setLevel(logging.DEBUG)
 app: Flask = create_app()
     
 if __name__ == '__main__':
-    print(app)
-    print()
     socketio: SocketIO = app.config.get('socketio')
     socketio.run(app=app, host="localhost", port=5005, debug=True)

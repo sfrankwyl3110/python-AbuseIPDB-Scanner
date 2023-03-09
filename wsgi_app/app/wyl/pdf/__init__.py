@@ -197,9 +197,10 @@ class PDFManager:
     file_handler = None
     logger = None
 
-    def __init__(self, current_socketio):
+    def __init__(self, current_socketio=None):
         self.current_config = current_config
-        self.socketio = current_socketio
+        if current_socketio is not None:
+            self.socketio = current_socketio
         self.source_folder = os.path.join(
             self.current_config.PROJECT_LOCATION, "app", self.current_config.source_foldername
         )
@@ -237,13 +238,9 @@ class PDFManager:
             os.makedirs(self.target_folder)
         if self.socketio is not None:
             if hasattr(self.socketio, 'emit'):
-                try:
-                    self.socketio.emit('my_response',
-                                       {'data': 'Init event'},
-                                       namespace='/')
-                except AttributeError as e:
-                    print(str(e))
-                    print("attr")
+                self.socketio.emit('my_response',
+                                   {'data': 'Init event'},
+                                   namespace='/')
         else:
             self.logger.debug("PDF MANAGER INITIALIZED")
         super().__init__()
@@ -514,7 +511,7 @@ class PDFManager:
                 # convert_pdf_to_png(pdf_path, output_folder)
                 output_filename = f"{pdf_path[:-4]}.png"
                 png_path = os.path.join(self.target_folder, output_filename)
-                print(png_path)
+                # print(png_path)
                 self.convert_pdf_to_png(pdf_path, os.path.dirname(png_path))
                 """
                 pages = convert_from_path(pdf_path)

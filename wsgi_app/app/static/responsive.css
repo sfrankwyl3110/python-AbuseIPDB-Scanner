@@ -13,18 +13,18 @@ div.container-fluid:nth-child(4) > div > div[data-id='label'] {
           font-size: 1.8rem;   }
 }
 
-input#source_folder, input#session_filename, input#target_folder {
+input#source-folder, input#session-filename, input#target-folder {
   font-size: 16px; }
   @media (max-width: 576px) {
-    input#source_folder, input#session_filename, input#target_folder {
+    input#source-folder, input#session-filename, input#target-folder {
       font-size: 0.6rem;   }
 }
     @media (min-width: 768px) {
-      input#source_folder, input#session_filename, input#target_folder {
+      input#source-folder, input#session-filename, input#target-folder {
         font-size: 0.8rem;   }
 }
       @media (min-width: 992px) {
-        input#source_folder, input#session_filename, input#target_folder {
+        input#source-folder, input#session-filename, input#target-folder {
           font-size: 1.8rem;   }
 }
 
@@ -52,5 +52,20 @@ div.row:nth-child(6) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > 
         div.row:nth-child(6) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div,
         div.row:nth-child(6) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div,
         div.row:nth-child(6) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div {
+          font-size: 1.8rem;   }
+}
+
+.my-class {
+  font-size: 16px; }
+  @media (max-width: 576px) {
+    .my-class {
+      font-size: 1.1rem;   }
+}
+    @media (min-width: 768px) {
+      .my-class {
+        font-size: 0.8rem;   }
+}
+      @media (min-width: 992px) {
+        .my-class {
           font-size: 1.8rem;   }
 }

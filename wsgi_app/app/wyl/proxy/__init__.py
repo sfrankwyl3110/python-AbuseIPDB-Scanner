@@ -7,9 +7,8 @@ import requests
 from datetime import datetime
 from bs4 import BeautifulSoup
 from wsgi_app.app import current_config
+from flask import current_app
 
-
-proxy_source_fields = ["url", "css_selector"]
 # Test URL to check if proxies are working
 TEST_URL = 'https://httpbin.org/ip'
 
@@ -20,6 +19,8 @@ class ProxyChains:
 
     config_path = None
     source_path = None
+    existing_proxies = {}
+    proxy_source_fields = ["url", "css_selector"]
 
     def __init__(self):
         self.source_path = os.path.join(current_config.PROJECT_LOCATION, 'app', 'proxy_data', 'proxies_ok.csv')
@@ -30,18 +31,16 @@ class ProxyChains:
         )
         super().__init__()
 
-    @staticmethod
-    def generate_config(output_file, proxy_input_csv=None):
+    def generate_config(self, output_file, proxy_input_csv=None):
         if proxy_input_csv is None:
             proxy_input_csv = os.path.join(current_config.PROJECT_LOCATION, 'app', 'proxy_data', 'proxies_ok.csv')
 
-        existing_proxies = {}
         if os.path.isfile(output_file):
             with open(output_file, 'r') as f:
                 for line in f:
                     try:
                         protocol, ip, port = line.strip().split(' ')
-                        existing_proxies[f'{ip}:{port}'] = protocol
+                        self.existing_proxies[f'{ip}:{port}'] = protocol
                     except ValueError:
                         pass
         with open(proxy_input_csv) as f, open(output_file, 'w') as out:
@@ -50,7 +49,7 @@ class ProxyChains:
                 ip_port = row['ip_port']
                 ip, port = ip_port.split(':')
                 protocol = row['protocol']
-                if ip_port in existing_proxies and existing_proxies[ip_port] != protocol:
+                if ip_port in self.existing_proxies and self.existing_proxies[ip_port] != protocol:
                     print(f'Updating protocol for {ip_port} to {protocol}')
                 out.write(f'{protocol} {ip} {port}\n')
         print(f'Config file saved to {output_file}')
@@ -61,17 +60,15 @@ class ProxyChains:
             requests.get(proxy_source_url).content, 'html.parser'
         ).select(css_selector)
 
-    @staticmethod
     def add_proxy_source(
+            self,
             current_proxy_source_url,
             current_selector,
             proxysource_target_filepath=os.path.join(
                 current_config.PROJECT_LOCATION, 'app', 'proxy_data', "proxy_sources.csv")
     ):
-        global proxy_source_fields
-
         with open(proxysource_target_filepath, "w", encoding="utf-8", newline='') as current_css_selector_file:
-            current_writer = csv.DictWriter(current_css_selector_file, fieldnames=proxy_source_fields)
+            current_writer = csv.DictWriter(current_css_selector_file, fieldnames=self.proxy_source_fields)
             current_writer.writeheader()
             current_writer.writerow({
                 "url": current_proxy_source_url,
@@ -93,11 +90,15 @@ class ProxyChains:
         return row_exists
 
 
+def gen_url(protocol, ip, port) -> dict:
+    return {protocol: f'{protocol}://{ip}:{port}'}
+
+
 def test_proxy_url(proxy_url):
     protocol = proxy_url.split("://")[0]
     ip = proxy_url.split("://")[1].split(":")[0]
     port = proxy_url.split("://")[1].split(":")[1]
-    proxies = {protocol: f'{protocol}://{ip}:{port}'}
+    proxies = gen_url(protocol, ip, port)
     working = False
     try:
         response = requests.get(TEST_URL, proxies=proxies, timeout=5)
@@ -109,7 +110,7 @@ def test_proxy_url(proxy_url):
     except requests.exceptions.ProxyError as p:
         e_message = p.args[0]
         if "Your proxy appears to only use HTTP and not HTTPS" in str(e_message):
-            proxies = {"http": f'http://{ip}:{port}'}
+            proxies = gen_url("http", ip, port)
             response = requests.get(TEST_URL, proxies=proxies, timeout=5)
             if response.status_code == 200:
                 working = True
@@ -118,7 +119,7 @@ def test_proxy_url(proxy_url):
                     corrected_proxies[proxy_key] = json.dumps(proxies)
     except requests.exceptions.SSLError as s:
         print("err: {}".format(s))
-        proxies = {"http": f'http://{ip}:{port}'}
+        proxies = gen_url("http", ip, port)
         response = requests.get(TEST_URL, proxies=proxies, timeout=5)
         if response.status_code == 200:
             working = True
@@ -139,7 +140,7 @@ def test_proxy(ip, port, protocol):
     except requests.exceptions.ProxyError as p:
         e_message = p.args[0]
         if "Your proxy appears to only use HTTP and not HTTPS" in str(e_message):
-            proxies = {"http": f'http://{ip}:{port}'}
+            proxies = gen_url("http", ip, port)
             response = requests.get(TEST_URL, proxies=proxies, timeout=5)
             if response.status_code == 200:
                 working = True
@@ -148,7 +149,7 @@ def test_proxy(ip, port, protocol):
                     corrected_proxies[proxy_key] = json.dumps(proxies)
     except requests.exceptions.SSLError as s:
         print("err: {}".format(s))
-        proxies = {"http": f'http://{ip}:{port}'}
+        proxies = gen_url("http", ip, port)
         response = requests.get(TEST_URL, proxies=proxies, timeout=5)
         if response.status_code == 200:
             working = True
@@ -157,6 +158,7 @@ def test_proxy(ip, port, protocol):
 
 
 def proxy_exists(ip, port):
+    # print(current_app.config.keys())
     with open('../wsgi_app/app/proxy_data/proxies_ok.csv') as f:
         reader = csv.DictReader(f)
         for row in reader:

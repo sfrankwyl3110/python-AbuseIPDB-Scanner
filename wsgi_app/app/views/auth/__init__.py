@@ -88,7 +88,6 @@ def login():
 
 @bp_auth.route('/register', methods=['GET', 'POST'], endpoint='pdf_register', strict_slashes=False)
 def register():
-    print(url_for('auth.pdf_register'))
     """User registration route."""
     if current_user.is_authenticated:
         # if user is logged in we get out of here
@@ -261,8 +260,6 @@ def register_google():
                 google_user = {}
                 if "google_user" in session.keys():
                     google_user: dict = session.get('google_user')
-                    print(google_user.get('picture'))
-                    print(google_user.get('name'))
                     country_code = "eng"
                     if google_user.get('locale') == "de":
                         country_code = "deu"
