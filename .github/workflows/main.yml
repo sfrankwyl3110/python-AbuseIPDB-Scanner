@@ -13,6 +13,10 @@ jobs:
       matrix:
         python-version: [3.6.15, 3.7.12, 3.8.12, 3.9.7, 3.9.13, 3.10.0]
     steps:
+      - name: List Python versions
+        uses: actions/setup-python@v2
+        with:
+          python-version: 'list'
       - name: Checkout code
         uses: actions/checkout@v2
         with:
