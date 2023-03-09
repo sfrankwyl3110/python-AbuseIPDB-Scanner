@@ -56,7 +56,6 @@ pycparser==2.21
 PyMySQL==1.0.2
 pyotp==2.8.0
 PyPDF2==3.0.1
-pypiwin32==223
 PyQRCode==1.2.1
 PyQt5==5.15.9
 PyQt5-Qt5==5.15.2
