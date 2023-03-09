@@ -1,0 +1,36 @@
+name: Flask app tests
+on:
+  push:
+    branches:
+      - flask-wsgi-2.2.3
+  pull_request:
+    branches:
+      - flask-wsgi-2.2.3
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9.13]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        working-directory: ./wsgi_app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run tests
+        working-directory: ./wsgi_app
+        run: |
+          pytest
+      - name: Run Flask app
+        working-directory: ./wsgi_app
+        run: |
+          python wsgi.py
