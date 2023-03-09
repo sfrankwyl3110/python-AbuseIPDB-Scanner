@@ -10,7 +10,7 @@ class BaseConfig:
 
     async_mode = "gevent"
     target_foldername = "target"
-    source_foldername = os.path.join("app", "uploads")
+    source_foldername = "uploads"
     logs_foldername = "logs"
     sessions_foldername = "sessions"
 

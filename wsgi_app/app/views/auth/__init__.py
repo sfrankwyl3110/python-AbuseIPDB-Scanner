@@ -4,9 +4,12 @@ import time
 import pyqrcode
 from datetime import datetime
 from io import BytesIO
-from flask import Blueprint, url_for, redirect, flash, session, render_template, abort, jsonify, request
+from flask import Blueprint, url_for, redirect, flash, session, render_template, abort, jsonify, request, \
+    current_app
 from flask_login import current_user, login_user, logout_user
-from app import RegisterForm, User, db, current_config, oauth, TokenForm, Message, LoginForm
+from flask_sqlalchemy import SQLAlchemy
+
+from wsgi_app.app import RegisterForm, User, current_config, oauth, TokenForm, Message, LoginForm
 
 
 bp_auth = Blueprint('auth', __name__, url_prefix="/")
@@ -17,14 +20,15 @@ def login():
     logging.debug("method: {}".format(request.method))
     form = LoginForm()
     session["remember"] = form.remember.data
+    app_db = current_app.config["db"]
     if current_user.is_authenticated:
         print("is authenticated")
         return redirect(url_for('index'))
 
     else:
         logging.debug("session_keys: {}".format(",".join(session.keys())))
-        user = User.query.filter_by(username=form.username.data).first()
-        users = User.query.all()
+        user = app_db.session.query(User).filter_by(username=form.username.data).first()
+        users = app_db.session.query(User).all()
         logging.debug(form.username.data)
 
         form_found_user = False
@@ -75,8 +79,8 @@ def login():
             text_message = "User-Login: {}".format(user.username)
             message = Message(text=text_message, author=user.username, category="SYS",
                               create_time=datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
-            db.session.add(message)
-            db.session.commit()
+            current_app.config["db"].session.add(message)
+            current_app.config["db"].session.commit()
 
             flash('You are now logged in!')
             return redirect(url_for('index'))
@@ -97,7 +101,8 @@ def register():
     if user is not None:
         flash('Username already exists.')
         return redirect("/pdf" + url_for('pdf_register'))
-    email = User.query.filter_by(email=form.email.data).first()
+    app_db = current_app.config["db"]
+    email = app_db.session.query(User).filter_by(email=form.email.data).first()
     if email is not None:
         flash('email already exists.')
         return redirect("/pdf" + url_for('pdf_register'))
@@ -106,8 +111,8 @@ def register():
         # add new user to the database
 
         user = User(username=form.username.data, password=form.password.data, email=form.email.data)
-        db.session.add(user)
-        db.session.commit()
+        current_app.config.get["db"].session.add(user)
+        current_app.config.get["db"].session.commit()
 
         # redirect to the two-factor auth page, passing username in session
         session['username'] = user.username
@@ -148,7 +153,8 @@ def logout():
 def two_factor_setup():
     if 'username' not in session:
         return redirect(url_for('index'))
-    user = User.query.filter_by(username=session['username']).first()
+    app_db = current_app.config["db"]
+    user = app_db.session.query(User).filter_by(username=session['username']).first()
     if user is None:
         return redirect(url_for('pdf_register'))
     # since this page contains the sensitive qrcode, make sure the browser
@@ -163,7 +169,8 @@ def two_factor_setup():
 def qrcode():
     if 'username' not in session:
         abort(404)
-    user = User.query.filter_by(username=session['username']).first()
+    app_db = current_app.config["db"]
+    user = app_db.session.query(User).query.filter_by(username=session['username']).first()
     if user is None:
         abort(404)
 
@@ -215,14 +222,15 @@ def google_auth():
     print(" Google User ", google_user)
     session["google_user"] = google_user
     session["google_email"] = google_user.get('email')
-    user = User.query.filter_by(email=session["google_email"]).first()
+    app_db = current_app.config["db"]
+    user = app_db.session.query(User).query.filter_by(email=session["google_email"]).first()
 
     if user is not None:
         print("USER")
         print(user)
         print(user.create_time)
         user.profile_pic = google_user.get('picture')
-        db.session.commit()
+        current_app.get["db"].session.commit()
         login_user(user)
     url_target = "auth.register_google"
     if "ref" in session.keys():
@@ -269,21 +277,22 @@ def register_google():
                     name=google_user.get('name') if google_user is not None else "",
                     profile_pic=google_user.get('picture') if google_user is not None else ""
                 )
-                db.session.add(user)
-                db.session.commit()
+                current_app.config.get["db"].session.add(user)
+                current_app.config.get["db"].session.commit()
 
                 # redirect to the two-factor auth page, passing username in session
                 session['username'] = user.username
                 return redirect(url_for('auth.two_factor_setup'))
         else:
-            user = User.query.filter_by(username=form.username.data).first()
+            app_db = current_app.config["db"]
+            user = app_db.session.query(User).query.filter_by(username=form.username.data).first()
             if user is not None:
                 flash('Username already exists.')
                 return redirect(url_for('auth.register'))
             # add new user to the database
             user = User(username=form.username.data, email=form.email.data)
-            db.session.add(user)
-            db.session.commit()
+            current_app.config.get["db"].session.add(user)
+            current_app.config.get["db"].session.commit()
 
             # redirect to the two-factor auth page, passing username in session
             session['username'] = user.username
@@ -300,7 +309,8 @@ def register_google():
 def try_2fa():
     ret = False
     form = TokenForm()
-    user = User.query.filter_by(username=form.username.data).first()
+    app_db = current_app.config["db"]
+    user = app_db.session.query(User).query.filter_by(username=form.username.data).first()
     if user is not None:
         verified = user.verify_totp(form.token.data)
         if not verified:

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, current_app, jsonify
 from flask_login import login_required
-from app.wyl.maps import request_coordinates
+from wsgi_app.app.wyl.maps import request_coordinates
 
 from wsgi_app.app import process_data
 

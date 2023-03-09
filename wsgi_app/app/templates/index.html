@@ -8,7 +8,33 @@
 {% endassets %}
 
 <div class="container-fluid" style="font-size: .8rem;">
-  {% if is_authenticated %}
+ {% if is_authenticated %}
+    <section class="container-fluid">
+        <div class="container-fluid card">
+            <div class="row">
+                <div class="col-12">
+                    <div id="uploaded_files" style="border: 1px dotted #CCC;">
+                        <h3>Uploaded Files</h3>
+                        <div id="upload_folder"></div>
+                        <ul id="ufiles"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+
+            $(function() {
+                let delete_url = "{{ url_for('general.delete_uploaded_file') }}"
+                let files_url = "{{ url_for('general.get_files_') }}"
+                get_files_at_ready(files_url, delete_url)
+            })
+        </script>
+    </section>
+
+
+    {% if debug %}
+<section id="file_paths" class="container-fluid ">
+    <div class="container-fluid card">
     <div class="row">
       <div data-id="label" class="col-4">
         <label for="source_folder">source</label>
@@ -33,19 +59,56 @@
         <input id="session_filename" class="form-control" type="text" value="{{ pdf_manager.session_filename }}" readonly>
       </div>
     </div>
-
-
-    <div class="row">
-        <div class="col-12">
-            <input type="button" value="RUN" id="btn_run">
-			<input type="button" value="UPLOAD PDF" id="btn_upload_file" onclick="window.open('/upload_file')">
+    </div>
+</section>
+    {% endif %}
+    <section id="upload_form" class="container-fluid">
+        <div class="container-fluid card">
+<div class="row">
+    <div class="col-12">
+        <div class="upload_form_container mb-3 mt-3 card" style="padding: 1rem;">
+    {{ upload_template_html|safe }}
         </div>
     </div>
-    {% endif %}
-    {% if is_authenticated %}
+</div>
+            <div class="row">
+                <div class="col-12">
+
+                </div>
+        </div>
+    </section>
+    <section id="pdf_buttons" class="container-fluid">
+        <div class="container-fluid card">
     <div class="row">
         <div class="col-12">
-            <div class="container-fluid">
+            <div class="pdf_button_container container-fluid" style="padding: 1rem;">
+                <div class="row">
+                    <div class="col-4">
+                        <input class="btn btn-primary btn-sm" type="button" value="RUN" id="btn_run" style="width: 100%;">
+                    </div>
+                    <div class="col-4">
+                        <input class="btn btn-primary btn-sm" type="button" value="UPLOAD PDF" id="btn_upload_file" onclick="window.open('/upload_file')" style="width: 100%;">
+                    </div>
+                    <div class="col-4">
+                        <input class="btn btn-primary btn-sm" type="button" value="RUN Extraction" id="btn_run_extraction" style="width: 100%;">
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+    </div>
+        </div>
+    </section>
+    {% endif %}
+    {% if is_authenticated %}
+    {% if debug %}
+    <section id="connection_user_details" class="container-fluid">
+        <div class="container-fluid card">
+    <div class="row">
+        <div class="col-12">
+            <div class="container-fluid card">
                 <div class="row">
                     <div class="col-4">
                     </div>
@@ -101,9 +164,13 @@
 
         </div>
     </div>
+        </div>
+    </section>
+    <section id="connection_debug_details" class="container-fluid">
+        <div class="container-fluid card">
     <div class="row">
         <div class="col-12">
-            <div class="container-fluid">
+            <div class="container-fluid card">
                 <div class="row">
                     <div class="col-4">
                         Async mode
@@ -131,23 +198,13 @@
             </div>
         </div>
     </div>
-    {% endif %}
-
-    <div class="row">
-        <div class="col-12">
-            {% if not is_authenticated %}
-            <input type="button" class="primary-button" id="show_login_btn" value="Login">
-            <script>
-                $("#show_login_btn").on('click', function(ev) {
-                    ev.preventDefault();
-                    $("#login_container").toggleClass('hide_login show_login');
-
-                })
-            </script>
-            {% endif %}
         </div>
+    </section>
+    {% endif %}
+    {% endif %}
+    <section id="login_section">
+        <div class="container-fluid card">
 
-    </div>
     <div class="row hide_login" id="login_container">
 
             <div class="container-fluid">
@@ -167,82 +224,10 @@
             </div>
 
     </div>
+        </div>
+    </section>
     {% if is_authenticated %}
-        <input type="button" class="primary-button" id="logout_btn" value="Logout">
-        <script>
-            $("#logout_btn").on('click', function(ev) {
-                ev.preventDefault();
-                window.location.href = "/logout";
-            })
-        </script>
-        {% endif %}
-    <script>
-const currentUrl = window.location.href;
-// Create a new instance of URLSearchParams with the query string of the current URL
-const searchParams = new URLSearchParams(currentUrl.split('?')[1]);
-if (searchParams.get('login') == "True") {
-$("#login_container").toggleClass('hide_login show_login');
-}
-    </script>
-    {% if is_authenticated %}
-    <div id="uploaded_files" style="border: 1px dotted #CCC;">
-        <h3>Uploaded Files (Click on entries to delete file)</h3>
-        <div id="upload_folder"></div>
-        <ul id="ufiles"></ul>
-    </div>
-    <script>
-        $(document).ready(function () {
 
-            $.ajax({
-                url: "{{ url_for('general.uploaded_files_index') }}",
-                success: function (data) {
-                    console.log(data)
-                    $("#upload_folder").html(data["folder"])
-                    $.each(data["contents"], function (index, current_file) {
-                        let li_element = document.createElement('li')
-                        $(li_element).html(current_file)
-                        $(li_element).on('click', function (ev) {
-                            ev.preventDefault();
-                            $.ajax({
-                                url: "{{ url_for('general.delete_uploaded_file') }}",
-                                type: "POST",
-                                data: {
-                                    file: current_file
-                                },
-                                success: function (data) {
-                                    console.log(data)
-                                    if(!data["success"] && data["exists_"]) {
-                                        console.log("EXISTING FILE, confirm for removal")
-                                        if (window.confirm("Do you really want to delete "+current_file+"?")) {
-                                            $.ajax({
-                                                url: "{{ url_for('general.delete_uploaded_file') }}",
-                                                type: "POST",
-                                                data: {
-                                                    file: current_file,
-                                                    confirmed: true
-                                                },
-                                                success: function (data) {
-                                                    if(data["success"]) {
-                                                        $("#ufiles").remove($(li_element))
-                                                        //window.location.reload()
-                                                    }
-                                                    
-                                                }
-                                            })
-                                        }
-                                    }
-                                }
-                            })
-                        })
-                        $("#ufiles").append($(li_element))
-
-
-                    })
-                }
-            })
-
-        })
-    </script>
     <div class="row">
         <div class="col-12" id="log" style="max-height: 50vh; min-height: 50vh; border: 1px solid #333; overflow: hidden; background: #111; color: #ECECEC; text-shadow: 1px 1px #fff;"></div>
     </div>
@@ -250,6 +235,3 @@ $("#login_container").toggleClass('hide_login show_login');
     {% endif %}
 </div>
 {% endblock %}
-
-
-

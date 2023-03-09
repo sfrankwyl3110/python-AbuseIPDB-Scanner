@@ -1,0 +1,109 @@
+{% from 'bootstrap5/form.html' import render_form, render_field, render_form_row %}
+<form id="upload-form">
+          {{ form.hidden_tag() }}
+        <div class="form-group">
+        {{ render_field(form.file) }}
+        </div>
+        <div class="form-group">
+        {{ render_field(form.submit) }}
+        </div>
+</form>
+<div class="progress">
+  <div class="progress-bar" role="progressbar"></div>
+</div>
+<div class="error_message_container container-fluid" id="error_message_container"></div>
+<script>
+$(function() {
+  var upload_form = $('#upload-form');
+  var progressBar = $('.progress-bar');
+  let error_message_container = $("#error_message_container")
+  let error_row = "div[data-ident='error_row']"
+
+  $(upload_form).on('submit', function(e) {
+
+    e.preventDefault();
+      progressBar.width('0%');
+      $(progressBar).css('backgroundColor', 'rgba(119,182,255,0.71)')
+      let formData;
+    window.setTimeout(function () {
+
+        formData = new FormData($(upload_form)[0]);
+        $.ajax({
+            xhr: function() {
+                let xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener('load', function(e) {
+                    console.log(e)
+                    let percent = 100;
+                    // Upload has completed successfully
+                    let new_Div = create_new_div("Upload success")
+                    if ($(error_message_container).find($(error_row)).length >= 5) {
+                        $(error_message_container).find($(error_row))[0].remove()
+                    }
+                    $(error_message_container).append( $(new_Div) );
+                    progressBar.width(percent + '%');
+                }, false);
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        let percent = Math.round((e.loaded / e.total) * 100);
+                        progressBar.width(percent + '%');
+                    }
+                }, false);
+                return xhr;
+            },
+            url: "/upload",
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                if($.inArray("status",Object.keys(data)) != "-1") {
+                    if (data["status"] == "error") {
+                        let new_Div = create_new_div(data["message"])
+                        if ($(error_message_container).find($(error_row)).length >= 5) {
+                            $(error_message_container).find($(error_row))[0].remove()
+                        }
+                        $(error_message_container).append( $(new_Div) );
+                        window.setTimeout(function () {
+                            $(progressBar).stop().css('backgroundColor', 'rgba(255,119,144,0.71)')
+                        }, 650)
+                    } else {
+                        console.log("no error")
+
+                        Toastify({
+                            text: "Upload Success!",
+                            className: "info",
+                            duration: 1400,
+                            gravity: "bottom",
+                            position: "center",
+                            style: {
+                                background: "linear-gradient(to right, #00b09b, #96c93d)",
+                            },callback: function () {
+                                window.setTimeout(function () {
+                                    // window.location.reload()
+                                }, 300)
+                            }
+                        }).showToast();
+
+                        window.setTimeout(function () {
+                            $(progressBar).css('backgroundColor', 'rgba(196,255,119,0.71)')
+
+                        }, 650)
+
+                    }
+
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('Upload error: ' + error);
+            }
+        });
+
+    }, 900)
+
+
+
+
+
+  });
+});
+</script>

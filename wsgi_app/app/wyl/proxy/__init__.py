@@ -1,5 +1,8 @@
 import csv
+import json
 import os
+import time
+
 import requests
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -7,6 +10,10 @@ from wsgi_app.app import current_config
 
 
 proxy_source_fields = ["url", "css_selector"]
+# Test URL to check if proxies are working
+TEST_URL = 'https://httpbin.org/ip'
+
+corrected_proxies = {}
 
 
 class ProxyChains:
@@ -81,3 +88,75 @@ class ProxyChains:
                     break
             proxy_source_file.close()
         return row_exists
+
+
+def test_proxy_url(proxy_url):
+    protocol = proxy_url.split("://")[0]
+    ip = proxy_url.split("://")[1].split(":")[0]
+    port = proxy_url.split("://")[1].split(":")[1]
+    proxies = {protocol: f'{protocol}://{ip}:{port}'}
+    working = False
+    try:
+        response = requests.get(TEST_URL, proxies=proxies, timeout=5)
+        if response.status_code == 200:
+            working = True
+    except requests.exceptions.ConnectTimeout as c:
+        pass
+    except requests.exceptions.ProxyError as p:
+        e_message = p.args[0]
+        if "Your proxy appears to only use HTTP and not HTTPS" in str(e_message):
+            proxies = {"http": f'http://{ip}:{port}'}
+            response = requests.get(TEST_URL, proxies=proxies, timeout=5)
+            if response.status_code == 200:
+                working = True
+                proxy_key = f'{ip}:{port}'
+                if proxy_key not in corrected_proxies:
+                    corrected_proxies[proxy_key] = json.dumps(proxies)
+    except requests.exceptions.SSLError as s:
+        proxies = {"http": f'http://{ip}:{port}'}
+        response = requests.get(TEST_URL, proxies=proxies, timeout=5)
+        if response.status_code == 200:
+            working = True
+        pass
+    return working
+
+
+def test_proxy(ip, port, protocol):
+    proxies = {protocol: f'{protocol}://{ip}:{port}'}
+    working = False
+    try:
+        response = requests.get(TEST_URL, proxies=proxies, timeout=5)
+        if response.status_code == 200:
+            working = True
+    except requests.exceptions.ConnectTimeout as c:
+        pass
+    except requests.exceptions.ProxyError as p:
+        e_message = p.args[0]
+        if "Your proxy appears to only use HTTP and not HTTPS" in str(e_message):
+            proxies = {"http": f'http://{ip}:{port}'}
+            response = requests.get(TEST_URL, proxies=proxies, timeout=5)
+            if response.status_code == 200:
+                working = True
+                proxy_key = f'{ip}:{port}'
+                if proxy_key not in corrected_proxies:
+                    corrected_proxies[proxy_key] = json.dumps(proxies)
+    except requests.exceptions.SSLError as s:
+        proxies = {"http": f'http://{ip}:{port}'}
+        response = requests.get(TEST_URL, proxies=proxies, timeout=5)
+        if response.status_code == 200:
+            working = True
+        pass
+    return working
+
+
+def proxy_exists(ip, port):
+    with open('../wsgi_app/app/proxy_data/proxies_ok.csv') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row['ip_port'] == f'{ip}:{port}':
+                tested = float(row['tested'])
+                if time.time() - tested < 2 * 24 * 60 * 60:
+                    return True
+                else:
+                    return False
+    return False

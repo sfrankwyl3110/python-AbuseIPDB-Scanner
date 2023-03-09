@@ -2,7 +2,6 @@ import logging
 
 from flask import Flask
 from flask_socketio import SocketIO
-
 from app import create_app
 
 # Set the log level to DEBUG to increase verbosity

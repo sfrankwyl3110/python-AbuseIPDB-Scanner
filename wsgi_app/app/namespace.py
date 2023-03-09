@@ -13,7 +13,7 @@ class MyNamespace(Namespace):
 
         while True:
             self.socketio.sleep(3)
-            # self.socketio.emit("my_response", {"data": "data"})
+            self.socketio.emit("my_response", {"data": "data", "count": self.count})
             self.count += 1
 
     def on_my_event(self, message):

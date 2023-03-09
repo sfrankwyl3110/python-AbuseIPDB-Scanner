@@ -44,6 +44,7 @@ bootstrap = Bootstrap5()
 cors = CORS()
 oauth = OAuth()
 
+
 socketio = SocketIO(async_mode=async_mode, cors_allowed_origins=WindowsConfig.socketio_cors_allowed)
 
 pdf_manager: PDFManager = PDFManager(current_socketio=socketio)
@@ -55,7 +56,7 @@ logging.getLogger('engineio').setLevel(logging.DEBUG)
 
 
 def create_app():
-    global socketio, pdf_manager, oauth
+    global socketio, pdf_manager, oauth, db
 
     app = Flask(
         __name__,
@@ -95,6 +96,7 @@ def create_app():
     )
 
     db.init_app(app)
+    app.config["db"] = db
 
     # Views
     # GENERAL
@@ -173,6 +175,7 @@ def create_app():
         authenticated = current_user.is_authenticated
         is_login = True if request.args.get('login') is not None else False
         form = LoginForm()
+        upload_form = UploadForm()
         kwargs = {
             "template_name_or_list": "index.html",
             "pdf_manager": pdf_manager,
@@ -180,7 +183,8 @@ def create_app():
             "form": form,
             "is_login": is_login,
             "async_mode": async_mode,
-            "app_settings_2fa_enabled": current_app.config.get("2fa_enabled")
+            "app_settings_2fa_enabled": current_app.config.get("2fa_enabled"),
+            "upload_template_html": render_template("upload_embed.html", form=upload_form)
         }
         if authenticated:
             kwargs.update({
@@ -204,7 +208,6 @@ def create_app():
 
     from wsgi_app.app.views.proxy import bp_proxy
     app.register_blueprint(bp_proxy)
-
 
     app.config["socketio"] = socketio
     return app

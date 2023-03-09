@@ -137,4 +137,6 @@ proxy_app/
 */*/proxy_data/*.csv
 */*/proxy_data/*.conf
 */*/uploads/*.pdf
+*/*/uploads/*.json
 wsgi_app/app/static/.webassets-cache/
+*/sessions/session-*.b64
