@@ -44,12 +44,11 @@ bootstrap = Bootstrap5()
 cors = CORS()
 oauth = OAuth()
 
-
 socketio = SocketIO(async_mode=async_mode, cors_allowed_origins=WindowsConfig.socketio_cors_allowed)
 
 pdf_manager: PDFManager = PDFManager(current_socketio=socketio)
 
-# Set the log level to DEBUG to increase verbosity
+# log level to DEBUG
 logging.getLogger('werkzeug').setLevel(logging.DEBUG)
 logging.getLogger('socketio').setLevel(logging.DEBUG)
 logging.getLogger('engineio').setLevel(logging.DEBUG)
@@ -66,6 +65,8 @@ def create_app():
     )
     app.config.from_object(WindowsConfig)
     app.config.__setattr__('_conf', WindowsConfig)
+    app.config["MAPS_ENABLED"] = False
+
     assets = Environment(app)
     assets.url = app.static_url_path
     assets.register('main',
@@ -97,6 +98,13 @@ def create_app():
 
     db.init_app(app)
     app.config["db"] = db
+
+    if app.config["MAPS_ENABLED"]:
+        app.config['maps_api_key'] = os.environ.get('GOOGLE_MAPS_API_KEY', None)
+        if app.config['maps_api_key'] is not None:
+            app.config['gmaps'] = googlemaps.Client(key=app.config['maps_api_key'])
+        else:
+            app.config['gmaps'] = False
 
     # Views
     # GENERAL
@@ -142,12 +150,6 @@ def create_app():
             if user:
                 return user
         return None
-
-    app.config['maps_api_key'] = os.environ.get('GOOGLE_MAPS_API_KEY', None)
-    if app.config['maps_api_key'] is not None:
-        app.config['gmaps'] = googlemaps.Client(key=app.config['maps_api_key'])
-    else:
-        app.config['gmaps'] = False
 
     @login_required
     @app.post('/run')

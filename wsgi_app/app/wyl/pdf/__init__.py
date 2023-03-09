@@ -16,7 +16,6 @@ from datetime import datetime
 import pytesseract
 from PIL import Image as PILImage
 from PyPDF2 import PdfReader, PdfWriter
-from pdf2image import convert_from_path
 from wand.image import Image
 from wsgi_app.app.config import WindowsConfig, ProductionConfig
 from wsgi_app.app.wyl.utils import clean_dict
@@ -390,7 +389,7 @@ class PDFManager:
         self.results[img_filename]["mean_orientation_2"] = sum(self.results[img_filename]["line_orientations_2"]) / len(
             self.results[img_filename]["line_orientations_2"])
 
-        self.logger.debug("DETECT-UPSIDEDOWN: mean_orientation-iverted: {}".format(
+        self.logger.debug("DETECT-UPSIDEDOWN: mean_orientation-inverted: {}".format(
             self.results[img_filename]["mean_orientation_2"]))
 
         diff = self.results[img_filename]["mean_orientation"] - self.results[img_filename]["mean_orientation_2"]

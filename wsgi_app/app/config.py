@@ -26,7 +26,7 @@ class BaseConfig:
     DB_PASS = "pdf_password"
     DB_NAME = "pdf_manager"
 
-    # set default button sytle and size, will be overwritten by macro parameters
+    # set default button style and size, will be overwritten by macro parameters
     BOOTSTRAP_BTN_STYLE = 'primary'
     BOOTSTRAP_BTN_SIZE = 'sm'
 

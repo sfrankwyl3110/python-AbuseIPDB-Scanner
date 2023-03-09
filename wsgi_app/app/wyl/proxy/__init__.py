@@ -30,7 +30,8 @@ class ProxyChains:
         )
         super().__init__()
 
-    def generate_config(self, output_file, proxy_input_csv=None):
+    @staticmethod
+    def generate_config(output_file, proxy_input_csv=None):
         if proxy_input_csv is None:
             proxy_input_csv = os.path.join(current_config.PROJECT_LOCATION, 'app', 'proxy_data', 'proxies_ok.csv')
 
@@ -54,13 +55,14 @@ class ProxyChains:
                 out.write(f'{protocol} {ip} {port}\n')
         print(f'Config file saved to {output_file}')
 
-    def scrape_source_rows(self, proxy_source_url, css_selector="section#list table tr"):
+    @staticmethod
+    def scrape_source_rows(proxy_source_url, css_selector="section#list table tr"):
         return BeautifulSoup(
             requests.get(proxy_source_url).content, 'html.parser'
         ).select(css_selector)
 
+    @staticmethod
     def add_proxy_source(
-            self,
             current_proxy_source_url,
             current_selector,
             proxysource_target_filepath=os.path.join(
@@ -77,7 +79,8 @@ class ProxyChains:
             })
             current_css_selector_file.close()
 
-    def check_csv_row(self, csv_filepath, field, value_expected):
+    @staticmethod
+    def check_csv_row(csv_filepath, field, value_expected):
         row_exists = False
         with open(csv_filepath, 'r') as proxy_source_file:
             csv_reader = csv.DictReader(proxy_source_file)
@@ -101,6 +104,7 @@ def test_proxy_url(proxy_url):
         if response.status_code == 200:
             working = True
     except requests.exceptions.ConnectTimeout as c:
+        print("err: {}".format(c))
         pass
     except requests.exceptions.ProxyError as p:
         e_message = p.args[0]
@@ -113,6 +117,7 @@ def test_proxy_url(proxy_url):
                 if proxy_key not in corrected_proxies:
                     corrected_proxies[proxy_key] = json.dumps(proxies)
     except requests.exceptions.SSLError as s:
+        print("err: {}".format(s))
         proxies = {"http": f'http://{ip}:{port}'}
         response = requests.get(TEST_URL, proxies=proxies, timeout=5)
         if response.status_code == 200:
@@ -129,6 +134,7 @@ def test_proxy(ip, port, protocol):
         if response.status_code == 200:
             working = True
     except requests.exceptions.ConnectTimeout as c:
+        print("err: {}".format(c))
         pass
     except requests.exceptions.ProxyError as p:
         e_message = p.args[0]
@@ -141,6 +147,7 @@ def test_proxy(ip, port, protocol):
                 if proxy_key not in corrected_proxies:
                     corrected_proxies[proxy_key] = json.dumps(proxies)
     except requests.exceptions.SSLError as s:
+        print("err: {}".format(s))
         proxies = {"http": f'http://{ip}:{port}'}
         response = requests.get(TEST_URL, proxies=proxies, timeout=5)
         if response.status_code == 200:
