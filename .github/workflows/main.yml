@@ -21,7 +21,16 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Cache pip modules
+        id: cache-pip-modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Install dependencies
+        if: steps.cache-pip-modules.outputs.cache-hit != 'true'
         working-directory: ./wsgi_app
         run: |
           python -m pip install --upgrade pip
